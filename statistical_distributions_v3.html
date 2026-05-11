@@ -1,0 +1,147 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.dist-name{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.dist-param{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;font-family:var(--font-mono)}
+.dist-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.5}
+.dist-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 10px 10px 12px;cursor:pointer;transition:border-color .15s;display:grid;grid-template-columns:1fr 82px;gap:8px;align-items:center}
+.dist-card:hover{border-color:var(--color-border-secondary)}
+.dist-card.sel{border:1.5px solid #378ADD}
+.thumb{width:82px;height:38px;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:.75rem}
+.sec{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:1rem 0 5px;text-transform:uppercase;letter-spacing:.06em}
+</style>
+
+<h2 class="sr-only">常见统计分布参考，含PDF曲线交互预览</h2>
+<div style="padding:1rem 0">
+
+<div class="sec">对称类</div><div class="grid" id="g-sym"></div>
+<div class="sec">单侧 / 右偏类</div><div class="grid" id="g-skew"></div>
+<div class="sec">多峰 / 混合 · 有界类</div><div class="grid" id="g-other"></div>
+<div class="sec">离散类</div><div class="grid" id="g-disc"></div>
+
+<div style="border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 16px;margin-top:.25rem">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+    <span style="font-size:13px;font-weight:500;color:var(--color-text-primary)" id="ptitle">点击上方卡片查看 PDF 曲线</span>
+    <span style="font-size:11px;color:var(--color-text-secondary);font-family:var(--font-mono)" id="pformula"></span>
+  </div>
+  <div style="position:relative;width:100%;height:210px">
+    <canvas id="pc" role="img" aria-label="所选分布PDF曲线">请先点击一张分布卡片。</canvas>
+  </div>
+  <div style="font-size:11px;color:var(--color-text-secondary);margin-top:8px;line-height:1.6" id="pnote"></div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const PI = Math.PI, E = Math.E;
+const gauss = (x, mu, si) => Math.exp(-0.5*((x-mu)/si)**2) / (si*Math.sqrt(2*PI));
+
+const DS = [
+  {id:'norm', g:'sym', name:'正态分布', p:'μ, σ', f:'f(x)=1/(σ√2π)·exp(−(x−μ)²/2σ²)', d:'对称钟形，中心极限定理归宿', n:'均值=μ，方差=σ²；最常见，可加性好', c:'#378ADD',
+   fn:x=>gauss(x,0,1), r:[-4,4]},
+  {id:'lap', g:'sym', name:'拉普拉斯分布', p:'μ, b', f:'f(x)=1/(2b)·exp(−|x−μ|/b)', d:'尖峰重尾，差分信号常见', n:'比正态更集中于均值，尾部指数衰减而非高斯衰减', c:'#534AB7',
+   fn:x=>0.5*Math.exp(-Math.abs(x)), r:[-5,5]},
+  {id:'t', g:'sym', name:'t 分布', p:'ν（自由度）', f:'f(x)∝(1+x²/ν)^(−(ν+1)/2)', d:'比正态更重尾，小样本替代', n:'ν→∞ 时趋向标准正态；ν=1 时即柯西分布（示例 ν=5）', c:'#0F6E56',
+   fn:x=>{const v=5;return Math.pow(1+x*x/v,-(v+1)/2)/3.19;}, r:[-5,5]},
+
+  {id:'lognorm', g:'skew', name:'对数正态', p:'μ_log, σ_log', f:'f(x)=1/(xσ√2π)·exp(−(ln x−μ)²/2σ²)', d:'取对数后为正态，只取正值', n:'常见于收入、粒径、价格；右偏且有正值约束', c:'#BA7517',
+   fn:x=>{if(x<=0.001)return 0;return Math.exp(-0.5*((Math.log(x)-0.5)/0.5)**2)/(x*0.5*Math.sqrt(2*PI));}, r:[0.01,8]},
+  {id:'gamma', g:'skew', name:'Gamma 分布', p:'k（形状）, θ（尺度）', f:'f(x)=x^(k−1)·e^(−x/θ)/(θ^k·Γ(k))', d:'等待时间、强度类信号', n:'k=1 退化为指数分布；均值=kθ，方差=kθ²（示例 k=2,θ=1）', c:'#D85A30',
+   fn:x=>{if(x<=0)return 0;return x*Math.exp(-x);}, r:[0.01,8]},
+  {id:'exp', g:'skew', name:'指数分布', p:'λ（速率）', f:'f(x)=λ·exp(−λx)', d:'事件间隔时间，无记忆性', n:'Gamma(k=1, θ=1/λ) 的特例；均值=1/λ（示例 λ=1）', c:'#993C1D',
+   fn:x=>{if(x<0)return 0;return Math.exp(-x);}, r:[0,6]},
+  {id:'weibull', g:'skew', name:'Weibull 分布', p:'k（形状）, λ（尺度）', f:'f(x)=(k/λ)(x/λ)^(k−1)·exp(−(x/λ)^k)', d:'寿命分析，形状可调偏度', n:'k<1 重尾右偏，k=1 退化为指数，k>1 峰值右移（示例 k=2）', c:'#639922',
+   fn:x=>{if(x<=0)return 0;const k=2,la=2;return (k/la)*Math.pow(x/la,k-1)*Math.exp(-Math.pow(x/la,k));}, r:[0.01,5]},
+  {id:'chisq', g:'skew', name:'卡方分布', p:'k（自由度）', f:'f(x)=x^(k/2−1)·e^(−x/2)/(2^(k/2)·Γ(k/2))', d:'统计检验基础，正态平方和', n:'k 个标准正态的平方和；均值=k，方差=2k（示例 k=4）', c:'#3B6D11',
+   fn:x=>{if(x<=0)return 0;return Math.pow(x,1)*Math.exp(-x/2)/4;}, r:[0.01,14]},
+
+  {id:'gmm', g:'other', name:'混合高斯 GMM', p:'π_k, μ_k, σ_k', f:'f(x)=Σπk·N(x;μk,σk²)', d:'多子群叠加，形态最灵活', n:'双峰示例：0.5·N(−2,1)+0.5·N(2,1)', c:'#7F77DD',
+   fn:x=>0.5*gauss(x,-2,1)+0.5*gauss(x,2,1), r:[-6,6]},
+  {id:'unif', g:'other', name:'均匀分布', p:'a, b', f:'f(x)=1/(b−a)，x∈[a,b]', d:'[a,b] 内等概率，最大熵分布', n:'均值=(a+b)/2，方差=(b−a)²/12（示例 [−2,2]）', c:'#888780',
+   fn:x=>(x>=-2&&x<=2)?0.25:0, r:[-3,3]},
+  {id:'beta', g:'other', name:'Beta 分布', p:'α, β', f:'f(x)=x^(α−1)(1−x)^(β−1)/B(α,β)', d:'取值 [0,1]，形态极灵活', n:'α=β 时对称；α<1 或 β<1 时边界无穷大（示例 α=2,β=3）', c:'#1D9E75',
+   fn:x=>{if(x<=0||x>=1)return 0;return Math.pow(x,1)*Math.pow(1-x,2)*12;}, r:[0.001,0.999]},
+
+  {id:'pois', g:'disc', name:'泊松分布', p:'λ（速率）', f:'P(k)=λ^k·e^(−λ)/k!', d:'单位时间内事件计数', n:'均值=方差=λ；λ 较大时趋近正态（示例 λ=4）', c:'#D4537E',
+   disc:true, fn:k=>{const la=4;let f=1;for(let i=1;i<=k;i++)f*=i;return Math.pow(la,k)*Math.exp(-la)/f;}, r:[0,12]},
+  {id:'binom', g:'disc', name:'二项分布', p:'n, p', f:'P(k)=C(n,k)·p^k·(1−p)^(n−k)', d:'n 次独立试验中成功次数', n:'均值=np，方差=np(1−p)（示例 n=10,p=0.4）', c:'#E24B4A',
+   disc:true, fn:k=>{const n=10,p=0.4;let c=1;for(let i=0;i<k;i++)c*=(n-i)/(i+1);return c*Math.pow(p,k)*Math.pow(1-p,n-k);}, r:[0,10]},
+  {id:'negb', g:'disc', name:'负二项分布', p:'r, p', f:'P(k)=C(k+r−1,k)·p^r(1−p)^k', d:'第 r 次成功前的失败次数', n:'r=1 退化为几何分布；适合过离散数据（示例 r=3,p=0.5）', c:'#F0997B',
+   disc:true, fn:k=>{const r=3,p=0.5;let c=1;for(let i=0;i<k;i++)c*=(r+i)/(i+1);return c*Math.pow(p,r)*Math.pow(1-p,k);}, r:[0,12]},
+];
+
+// ── 缩略图 SVG，曲线居中填满画布 ──────────────────────────────────
+function thumb(d) {
+  const W=80, H=36, PAD=2;
+  const cw = W - PAD*2, ch = H - PAD*2;
+
+  if (d.disc) {
+    const [lo,hi] = d.r;
+    const ks = [], ys = [];
+    for (let k=lo; k<=hi; k++) { ks.push(k); ys.push(d.fn(k)); }
+    const maxY = Math.max(...ys) || 1;
+    const n = ks.length, bw = cw/n;
+    const bars = ys.map((y,i) => {
+      const bh = (y/maxY)*ch;
+      const x = PAD + i*bw + bw*0.1;
+      return `<rect x="${x.toFixed(1)}" y="${(PAD+ch-bh).toFixed(1)}" width="${(bw*0.8).toFixed(1)}" height="${bh.toFixed(1)}" fill="${d.c}" opacity="0.85" rx="1"/>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">${bars}</svg>`;
+  }
+
+  // 连续：在 range 内均匀采样，映射到 [PAD, W-PAD]
+  const [lo,hi] = d.r;
+  const steps = 80;
+  const ys = [];
+  for (let i=0; i<=steps; i++) ys.push(d.fn(lo + (hi-lo)*i/steps));
+  const maxY = Math.max(...ys) || 1;
+  const pts = ys.map((y,i) => {
+    const px = PAD + (i/steps)*cw;
+    const py = PAD + ch - (y/maxY)*ch;
+    return `${px.toFixed(1)},${py.toFixed(1)}`;
+  });
+  const first = `${PAD},${PAD+ch}`;
+  const last  = `${PAD+cw},${PAD+ch}`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <polygon points="${first} ${pts.join(' ')} ${last}" fill="${d.c}" opacity="0.15"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${d.c}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ── 渲染卡片 ──────────────────────────────────────────────────────
+const gmap = {sym:'g-sym',skew:'g-skew',other:'g-other',disc:'g-disc'};
+DS.forEach(d => {
+  const el = document.getElementById(gmap[d.g]);
+  const card = document.createElement('div');
+  card.className = 'dist-card'; card.id = 'c-'+d.id;
+  card.innerHTML = `<div><div class="dist-name">${d.name}</div><div class="dist-param">${d.p}</div><div class="dist-desc">${d.d}</div></div><div style="display:flex;align-items:center;justify-content:center">${thumb(d)}</div>`;
+  card.addEventListener('click', () => pick(d.id));
+  el.appendChild(card);
+});
+
+// ── 大图预览 ──────────────────────────────────────────────────────
+let chart=null, cur=null;
+function pick(id) {
+  if (cur) document.getElementById('c-'+cur)?.classList.remove('sel');
+  cur=id;
+  document.getElementById('c-'+id)?.classList.add('sel');
+  const d = DS.find(x=>x.id===id);
+  document.getElementById('ptitle').textContent = d.name;
+  document.getElementById('pformula').textContent = d.f;
+  document.getElementById('pnote').textContent = d.n;
+  if (chart) { chart.destroy(); chart=null; }
+  const ctx = document.getElementById('pc').getContext('2d');
+  if (d.disc) {
+    const [lo,hi]=d.r, L=[], V=[];
+    for(let k=lo;k<=hi;k++){L.push(String(k));V.push(+d.fn(k).toFixed(5));}
+    chart=new Chart(ctx,{type:'bar',data:{labels:L,datasets:[{label:'P(k)',data:V,backgroundColor:d.c+'88',borderColor:d.c,borderWidth:1,barPercentage:0.65}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{ticks:{font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}});
+  } else {
+    const [lo,hi]=d.r, steps=150, L=[], V=[];
+    for(let i=0;i<=steps;i++){const x=lo+(hi-lo)*i/steps;L.push(x.toFixed(2));V.push(+d.fn(x).toFixed(6));}
+    chart=new Chart(ctx,{type:'line',data:{labels:L,datasets:[{label:'f(x)',data:V,borderColor:d.c,borderWidth:2,pointRadius:0,fill:true,backgroundColor:d.c+'22',tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{maxTicksLimit:9,font:{size:11}},grid:{display:false}},y:{ticks:{font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}});
+  }
+}
+pick('norm');
+</script>

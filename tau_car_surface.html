@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CMG 扶正力矩曲面</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;padding:14px}
+h3{font-size:15px;color:#1e293b;margin-bottom:10px;text-align:center}
+#plot{width:100%;height:560px;background:#fff;border-radius:10px;box-shadow:0 2px 8px #0002}
+.hint{text-align:center;font-size:11px;color:#94a3b8;margin-top:6px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px #0001}
+.tbl th{background:#1e3a5f;color:#fff;padding:6px 14px;text-align:center}
+.tbl td{padding:5px 14px;text-align:center;border-bottom:1px solid #f1f5f9}
+.tbl tr:last-child td{border:none}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.num{color:#ef4444;font-weight:700}
+</style>
+</head>
+<body>
+
+<h3>CMG 扶正力矩三维曲面 &nbsp;|&nbsp; τ_car = −2·Igz·ω·α̇·cos(α)</h3>
+<div id="plot"></div>
+<div class="hint">🖱 拖动旋转 &nbsp;·&nbsp; 滚轮缩放 &nbsp;·&nbsp; 悬停查看精确坐标</div>
+<table class="tbl" id="ptTable">
+  <tr><th>#</th><th>α (deg)</th><th>α̇ (deg/s)</th><th>τ_car (N·m)</th></tr>
+</table>
+
+<script>
+const Igz   = 0.0873488;
+const omega = 5200 * 2 * Math.PI / 60;   // 544.54 rad/s
+
+function lin(a, b, n) {
+  return Array.from({length: n}, (_, i) => a + (b - a) * i / (n - 1));
+}
+
+const N   = 80;
+const alp = lin(-57.7, 57.7, N);   // deg
+const adot= lin(-360,  360,  N);   // deg/s
+
+// Z[i=adot][j=alp]
+const Z = adot.map(ad =>
+  alp.map(a => -2 * Igz * omega * (ad * Math.PI/180) * Math.cos(a * Math.PI/180))
+);
+
+// 标注点 [alpha(deg), alphadot(deg/s)]
+const PTS = [
+  [0, 90], [0, 180], [0, 270], [0, 360],
+  [20, 180], [40, 180], [57.7, 360]
+];
+const PZ = PTS.map(p =>
+  -2 * Igz * omega * (p[1]*Math.PI/180) * Math.cos(p[0]*Math.PI/180)
+);
+
+const surf = {
+  type: 'surface',
+  x: alp, y: adot, z: Z,
+  colorscale: 'RdBu',
+  opacity: 0.92,
+  hovertemplate: 'α: %{x:.1f} deg<br>α̇: %{y:.1f} deg/s<br>τ_car: %{z:.2f} N·m<extra></extra>',
+  contours: {z: {show: true, usecolormap: true, highlightcolor:'#fff', project:{z:true}}}
+};
+
+const scatter = {
+  type: 'scatter3d',
+  x: PTS.map(p=>p[0]), y: PTS.map(p=>p[1]), z: PZ,
+  mode: 'markers+text',
+  marker: {size:6, color:'#ef4444', line:{color:'#fff',width:1}},
+  text: PTS.map((_,i) => (i+1).toString()),
+  textposition: 'top center',
+  textfont: {size:12, color:'#1e293b', family:'Arial Black'},
+  hovertemplate: 'α: %{x:.1f} deg<br>α̇: %{y:.1f} deg/s<br>τ_car: %{z:.2f} N·m<extra>标注点</extra>'
+};
+
+const layout = {
+  margin: {l:0, r:0, t:20, b:0},
+  scene: {
+    xaxis: {title:{text:'α (deg)',     font:{size:12}}},
+    yaxis: {title:{text:'α̇ (deg/s)',  font:{size:12}}},
+    zaxis: {title:{text:'τ_car (N·m)', font:{size:12}}},
+    camera: {eye: {x:-1.5, y:-1.5, z:0.9}}
+  },
+  paper_bgcolor: 'rgba(0,0,0,0)',
+  showlegend: false
+};
+
+Plotly.newPlot('plot', [surf, scatter], layout, {responsive:true, displayModeBar:true});
+
+// 坐标表
+const tbody = document.getElementById('ptTable');
+PTS.forEach((p, i) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="num">${i+1}</td><td>${p[0].toFixed(1)}</td><td>${p[1].toFixed(1)}</td><td>${PZ[i].toFixed(2)} N·m</td>`;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
