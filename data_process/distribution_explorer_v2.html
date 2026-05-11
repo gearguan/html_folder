@@ -1,0 +1,297 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:1rem}
+.dcard{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:8px 10px;cursor:pointer;background:var(--color-background-primary);transition:border-color .15s}
+.dcard:hover{border-color:var(--color-border-secondary)}
+.dcard.sel{border:1.5px solid #378ADD;background:var(--color-background-info)}
+.dcard-top{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.dcard-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dcard-name{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.dcard-cat{font-size:10px;padding:1px 6px;border-radius:3px;display:inline-block;margin-top:2px}
+.sec{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin:1rem 0 5px;text-transform:uppercase;letter-spacing:.06em}
+.panel{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px 16px;margin-top:.5rem}
+.panel-title{font-size:15px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+.panel-formula{font-size:11px;color:var(--color-text-secondary);font-family:var(--font-mono);margin-bottom:12px;line-height:1.6}
+.sliders{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:14px}
+.slider-row{display:flex;flex-direction:column;gap:4px}
+.slider-label{display:flex;justify-content:space-between;align-items:baseline}
+.slider-name{font-size:12px;color:var(--color-text-secondary)}
+.slider-val{font-size:13px;font-weight:500;color:var(--color-text-primary);min-width:48px;text-align:right}
+.stat-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.stat-chip{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:4px 10px;font-size:11px;color:var(--color-text-secondary)}
+.stat-chip b{color:var(--color-text-primary);font-weight:500}
+.note{font-size:11px;color:var(--color-text-secondary);line-height:1.6;margin-top:10px}
+</style>
+
+<h2 class="sr-only">统计分布探索器，含缩略图与可调参数</h2>
+<div style="padding:1rem 0">
+<div class="sec">选择分布</div>
+<div class="grid" id="cardGrid"></div>
+<div class="panel" id="mainPanel">
+  <div class="panel-title" id="pName">请点击上方选择一种分布</div>
+  <div class="panel-formula" id="pFormula"></div>
+  <div class="sliders" id="sliderArea"></div>
+  <div class="stat-row" id="statRow"></div>
+  <div style="position:relative;width:100%;height:240px">
+    <canvas id="mainChart" role="img" aria-label="分布PDF曲线"></canvas>
+  </div>
+  <div class="note" id="pNote"></div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const gauss=(x,mu,si)=>Math.exp(-0.5*((x-mu)/si)**2)/(si*Math.sqrt(2*Math.PI));
+function lgamma(z){
+  if(z<0.5)return Math.log(Math.PI/Math.sin(Math.PI*z))-lgamma(1-z);
+  z-=1;
+  const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let x=1.000000000190015;for(let i=0;i<6;i++)x+=c[i]/(z+i+1);
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(z+5.5)-(z+5.5)+Math.log(x/(z+1));
+}
+function lnBeta(a,b){return lgamma(a)+lgamma(b)-lgamma(a+b);}
+function comb(n,k){if(k<0||k>n)return 0;let c=1;for(let i=0;i<k;i++)c*=(n-i)/(i+1);return c;}
+
+const DS=[
+  {id:'norm',name:'正态分布',cat:'对称',c:'#378ADD',
+   formula:'f(x) = 1/(σ√2π) · exp(−(x−μ)² / 2σ²)',
+   note:'最常见的连续分布。中心极限定理保证：大量独立随机变量之和趋向正态分布。',
+   params:[{name:'μ（均值）',key:'mu',min:-5,max:5,step:0.1,def:0},{name:'σ（标准差）',key:'si',min:0.1,max:5,step:0.1,def:1}],
+   stats:p=>[{label:'均值',v:p.mu.toFixed(2)},{label:'方差',v:(p.si**2).toFixed(3)},{label:'偏度',v:'0'},{label:'峰度',v:'0'}],
+   range:p=>[p.mu-4*p.si,p.mu+4*p.si], fn:(x,p)=>gauss(x,p.mu,p.si),
+   thumbFn:x=>gauss(x,0,1), thumbR:[-3.5,3.5]},
+
+  {id:'lap',name:'拉普拉斯',cat:'对称',c:'#534AB7',
+   formula:'f(x) = 1/(2b) · exp(−|x−μ| / b)',
+   note:'比正态更尖峰、更重尾。常见于差分信号、音频噪声建模。',
+   params:[{name:'μ（位置）',key:'mu',min:-5,max:5,step:0.1,def:0},{name:'b（尺度）',key:'b',min:0.1,max:5,step:0.1,def:1}],
+   stats:p=>[{label:'均值',v:p.mu.toFixed(2)},{label:'方差',v:(2*p.b**2).toFixed(3)},{label:'峰度',v:'3（超额）'}],
+   range:p=>[p.mu-6*p.b,p.mu+6*p.b], fn:(x,p)=>Math.exp(-Math.abs(x-p.mu)/p.b)/(2*p.b),
+   thumbFn:x=>0.5*Math.exp(-Math.abs(x)), thumbR:[-4,4]},
+
+  {id:'t',name:'t 分布',cat:'对称',c:'#0F6E56',
+   formula:'f(x) ∝ (1 + x²/ν)^(−(ν+1)/2)',
+   note:'ν 越小尾部越重；ν→∞ 趋向标准正态。小样本统计推断的基础。',
+   params:[{name:'ν（自由度）',key:'nu',min:1,max:30,step:1,def:5}],
+   stats:p=>[{label:'均值',v:p.nu>1?'0':'未定义'},{label:'方差',v:p.nu>2?(p.nu/(p.nu-2)).toFixed(3):'未定义'}],
+   range:()=>[-6,6],
+   fn:(x,p)=>{const v=p.nu,lnB=0.5*Math.log(Math.PI*v)+lgamma(v/2)-lgamma((v+1)/2);return Math.exp(-((v+1)/2)*Math.log(1+x*x/v)-lnB);},
+   thumbFn:x=>{const v=5,lnB=0.5*Math.log(Math.PI*v)+lgamma(v/2)-lgamma((v+1)/2);return Math.exp(-((v+1)/2)*Math.log(1+x*x/v)-lnB);}, thumbR:[-4,4]},
+
+  {id:'logn',name:'对数正态',cat:'右偏',c:'#BA7517',
+   formula:'f(x) = 1/(xσ√2π) · exp(−(ln x−μ)² / 2σ²)',
+   note:'取对数后变正态。常见于收入、粒径、股价等只取正值的量。',
+   params:[{name:'μ（对数均值）',key:'mu',min:-2,max:3,step:0.1,def:0},{name:'σ（对数标准差）',key:'si',min:0.1,max:2,step:0.05,def:0.5}],
+   stats:p=>[{label:'均值',v:Math.exp(p.mu+p.si**2/2).toFixed(3)},{label:'中位数',v:Math.exp(p.mu).toFixed(3)}],
+   range:p=>[0,Math.exp(p.mu+p.si**2/2)+6*Math.sqrt((Math.exp(p.si**2)-1)*Math.exp(2*p.mu+p.si**2))],
+   fn:(x,p)=>x<=0?0:Math.exp(-0.5*((Math.log(x)-p.mu)/p.si)**2)/(x*p.si*Math.sqrt(2*Math.PI)),
+   thumbFn:x=>x<=0?0:Math.exp(-0.5*((Math.log(x)-0.5)/0.5)**2)/(x*0.5*Math.sqrt(2*Math.PI)), thumbR:[0.05,8]},
+
+  {id:'gamma',name:'Gamma 分布',cat:'右偏',c:'#D85A30',
+   formula:'f(x) = x^(k−1) · e^(−x/θ) / (θ^k · Γ(k))',
+   note:'k=1 退化为指数分布。k 控制形状，θ 控制尺度。',
+   params:[{name:'k（形状）',key:'k',min:0.5,max:10,step:0.5,def:2},{name:'θ（尺度）',key:'th',min:0.1,max:5,step:0.1,def:1}],
+   stats:p=>[{label:'均值',v:(p.k*p.th).toFixed(3)},{label:'方差',v:(p.k*p.th**2).toFixed(3)},{label:'偏度',v:(2/Math.sqrt(p.k)).toFixed(3)}],
+   range:p=>[0,p.k*p.th+5*Math.sqrt(p.k)*p.th],
+   fn:(x,p)=>x<=0?0:Math.exp((p.k-1)*Math.log(x)-x/p.th-p.k*Math.log(p.th)-lgamma(p.k)),
+   thumbFn:x=>x<=0?0:x*Math.exp(-x), thumbR:[0,8]},
+
+  {id:'exp',name:'指数分布',cat:'右偏',c:'#993C1D',
+   formula:'f(x) = λ · exp(−λx)',
+   note:'无记忆性的连续分布。λ 越大，衰减越快，均值越小。',
+   params:[{name:'λ（速率）',key:'la',min:0.1,max:5,step:0.1,def:1}],
+   stats:p=>[{label:'均值',v:(1/p.la).toFixed(3)},{label:'方差',v:(1/p.la**2).toFixed(3)},{label:'偏度',v:'2'}],
+   range:p=>[0,6/p.la], fn:(x,p)=>x<0?0:p.la*Math.exp(-p.la*x),
+   thumbFn:x=>x<0?0:Math.exp(-x), thumbR:[0,5]},
+
+  {id:'weib',name:'Weibull',cat:'右偏',c:'#639922',
+   formula:'f(x) = (k/λ)(x/λ)^(k−1) · exp(−(x/λ)^k)',
+   note:'k<1 右偏，k=1 指数分布，k>1 峰值右移。广泛用于可靠性分析。',
+   params:[{name:'k（形状）',key:'k',min:0.5,max:5,step:0.1,def:2},{name:'λ（尺度）',key:'la',min:0.5,max:5,step:0.1,def:2}],
+   stats:p=>[{label:'均值',v:(p.la*Math.exp(lgamma(1+1/p.k))).toFixed(3)},{label:'众数',v:p.k>1?(p.la*Math.pow((p.k-1)/p.k,1/p.k)).toFixed(3):'0'}],
+   range:p=>[0,p.la*3.5],
+   fn:(x,p)=>x<=0?0:(p.k/p.la)*Math.pow(x/p.la,p.k-1)*Math.exp(-Math.pow(x/p.la,p.k)),
+   thumbFn:x=>{if(x<=0)return 0;const k=2,la=2;return(k/la)*Math.pow(x/la,k-1)*Math.exp(-Math.pow(x/la,k));}, thumbR:[0,5]},
+
+  {id:'beta',name:'Beta 分布',cat:'有界',c:'#1D9E75',
+   formula:'f(x) = x^(α−1)(1−x)^(β−1) / B(α,β)',
+   note:'取值严格在 [0,1]。α=β=1 为均匀分布；α<1 或 β<1 出现 U 形。',
+   params:[{name:'α',key:'a',min:0.1,max:8,step:0.1,def:2},{name:'β',key:'b',min:0.1,max:8,step:0.1,def:3}],
+   stats:p=>[{label:'均值',v:(p.a/(p.a+p.b)).toFixed(3)},{label:'方差',v:(p.a*p.b/((p.a+p.b)**2*(p.a+p.b+1))).toFixed(4)},{label:'众数',v:p.a>1&&p.b>1?((p.a-1)/(p.a+p.b-2)).toFixed(3):'边界'}],
+   range:()=>[0.001,0.999],
+   fn:(x,p)=>(x<=0||x>=1)?0:Math.exp((p.a-1)*Math.log(x)+(p.b-1)*Math.log(1-x)-lnBeta(p.a,p.b)),
+   thumbFn:x=>(x<=0||x>=1)?0:Math.exp(1*Math.log(x)+2*Math.log(1-x)-lnBeta(2,3)), thumbR:[0.001,0.999]},
+
+  {id:'gmm',name:'混合高斯',cat:'多峰',c:'#7F77DD',
+   formula:'f(x) = π·N(μ₁,σ) + (1−π)·N(μ₂,σ)',
+   note:'两个正态分布的加权混合。μ₁、μ₂ 控制峰位，π 控制权重比例。',
+   params:[{name:'μ₁（峰1位置）',key:'mu1',min:-6,max:6,step:0.1,def:-2},{name:'μ₂（峰2位置）',key:'mu2',min:-6,max:6,step:0.1,def:2},{name:'σ（公共标准差）',key:'si',min:0.2,max:3,step:0.1,def:1},{name:'π（峰1权重）',key:'pi',min:0.1,max:0.9,step:0.05,def:0.5}],
+   stats:p=>[{label:'均值',v:(p.pi*p.mu1+(1-p.pi)*p.mu2).toFixed(2)},{label:'峰1权重',v:(p.pi*100).toFixed(0)+'%'},{label:'峰间距',v:Math.abs(p.mu2-p.mu1).toFixed(2)}],
+   range:p=>[Math.min(p.mu1,p.mu2)-4*p.si,Math.max(p.mu1,p.mu2)+4*p.si],
+   fn:(x,p)=>p.pi*gauss(x,p.mu1,p.si)+(1-p.pi)*gauss(x,p.mu2,p.si),
+   thumbFn:x=>0.5*gauss(x,-2,1)+0.5*gauss(x,2,1), thumbR:[-5,5]},
+
+  {id:'pois',name:'泊松分布',cat:'离散',c:'#D4537E',disc:true,
+   formula:'P(k) = λ^k · e^(−λ) / k!',
+   note:'单位时间/空间内事件发生次数。λ 越大分布越宽，大 λ 时趋近正态。',
+   params:[{name:'λ（平均速率）',key:'la',min:0.5,max:20,step:0.5,def:4}],
+   stats:p=>[{label:'均值',v:p.la.toFixed(2)},{label:'方差',v:p.la.toFixed(2)},{label:'偏度',v:(1/Math.sqrt(p.la)).toFixed(3)}],
+   range:p=>[0,Math.ceil(p.la+4*Math.sqrt(p.la))],
+   fn:(x,p)=>{const k=Math.round(x);if(k<0)return 0;return Math.exp(k*Math.log(p.la)-p.la-lgamma(k+1));},
+   thumbFn:k=>{const la=4;return Math.exp(k*Math.log(la)-la-lgamma(k+1));}, thumbR:[0,12]},
+
+  {id:'binom',name:'二项分布',cat:'离散',c:'#E24B4A',disc:true,
+   formula:'P(k) = C(n,k) · p^k · (1−p)^(n−k)',
+   note:'n 次独立伯努利试验中成功次数。p→0 时趋近泊松，n大p中时趋近正态。',
+   params:[{name:'n（试验次数）',key:'n',min:2,max:40,step:1,def:10},{name:'p（成功概率）',key:'p',min:0.05,max:0.95,step:0.05,def:0.4}],
+   stats:p=>[{label:'均值',v:(p.n*p.p).toFixed(3)},{label:'方差',v:(p.n*p.p*(1-p.p)).toFixed(3)},{label:'偏度',v:((1-2*p.p)/Math.sqrt(p.n*p.p*(1-p.p))).toFixed(3)}],
+   range:p=>[0,p.n], fn:(x,p)=>comb(p.n,Math.round(x))*Math.pow(p.p,Math.round(x))*Math.pow(1-p.p,p.n-Math.round(x)),
+   thumbFn:k=>comb(10,k)*Math.pow(0.4,k)*Math.pow(0.6,10-k), thumbR:[0,10]},
+];
+
+// ── 用 Canvas 绘制缩略图 ────────────────────────────────────────
+function drawThumb(canvas, d){
+  const W=canvas.width, H=canvas.height;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const PAD=2;
+  const cw=W-PAD*2, ch=H-PAD*2;
+
+  if(d.disc){
+    const [lo,hi]=d.thumbR;
+    const ks=[], ys=[];
+    for(let k=lo;k<=hi;k++){ks.push(k);const y=d.thumbFn(k);ys.push(isFinite(y)?y:0);}
+    const maxY=Math.max(...ys)||1;
+    const n=ks.length, bw=cw/n;
+    ctx.fillStyle=d.c+'cc';
+    ys.forEach((y,i)=>{
+      const bh=(y/maxY)*ch;
+      const x=PAD+i*bw+bw*0.1;
+      ctx.beginPath();
+      ctx.roundRect(x, PAD+ch-bh, bw*0.8, bh, 1);
+      ctx.fill();
+    });
+  } else {
+    const [lo,hi]=d.thumbR;
+    const steps=80;
+    const pts=[];
+    let maxY=0;
+    for(let i=0;i<=steps;i++){const x=lo+(hi-lo)*i/steps;const y=d.thumbFn(x);if(isFinite(y)&&y>maxY)maxY=y;}
+    maxY=maxY||1;
+    for(let i=0;i<=steps;i++){
+      const x=lo+(hi-lo)*i/steps;
+      const y=d.thumbFn(x);
+      const px=PAD+(i/steps)*cw;
+      const py=PAD+ch-(isFinite(y)?y:0)/maxY*ch;
+      pts.push([px,py]);
+    }
+    // 填充区域
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], PAD+ch);
+    pts.forEach(([px,py])=>ctx.lineTo(px,py));
+    ctx.lineTo(pts[pts.length-1][0], PAD+ch);
+    ctx.closePath();
+    ctx.fillStyle=d.c+'30';
+    ctx.fill();
+    // 曲线
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length-1;i++){
+      const mx=(pts[i][0]+pts[i+1][0])/2;
+      const my=(pts[i][1]+pts[i+1][1])/2;
+      ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my);
+    }
+    ctx.lineTo(pts[pts.length-1][0],pts[pts.length-1][1]);
+    ctx.strokeStyle=d.c;
+    ctx.lineWidth=1.8;
+    ctx.lineJoin='round';
+    ctx.stroke();
+  }
+}
+
+// ── 渲染卡片 ────────────────────────────────────────────────────
+const catColor={对称:'#E6F1FB',右偏:'#FAEEDA',特殊:'#EEEDFE',有界:'#EAF3DE',多峰:'#EEEDFE',离散:'#FAECE7'};
+const catText ={对称:'#0C447C',右偏:'#633806',特殊:'#3C3489',有界:'#27500A',多峰:'#3C3489',离散:'#712B13'};
+
+DS.forEach(d=>{
+  const card=document.createElement('div');
+  card.className='dcard'; card.id='dc_'+d.id;
+  const bg=catColor[d.cat]||'#F1EFE8', fg=catText[d.cat]||'#444';
+  card.innerHTML=`
+    <div class="dcard-top">
+      <div class="dcard-dot" style="background:${d.c}"></div>
+      <div class="dcard-name">${d.name}</div>
+    </div>
+    <canvas id="th_${d.id}" width="120" height="40" style="display:block;width:100%;height:40px"></canvas>
+    <div style="margin-top:5px"><span class="dcard-cat" style="background:${bg};color:${fg}">${d.cat}</span></div>`;
+  card.addEventListener('click',()=>selectDist(d.id));
+  document.getElementById('cardGrid').appendChild(card);
+});
+
+// DOM 渲染后再画缩略图
+requestAnimationFrame(()=>{
+  DS.forEach(d=>{
+    const canvas=document.getElementById('th_'+d.id);
+    if(canvas) drawThumb(canvas,d);
+  });
+});
+
+// ── 参数面板 & 大图 ─────────────────────────────────────────────
+let curId=null, curParams={}, mainChart=null;
+
+function buildSliders(d){
+  const area=document.getElementById('sliderArea');
+  area.innerHTML=''; curParams={};
+  d.params.forEach(p=>{
+    curParams[p.key]=p.def;
+    const row=document.createElement('div'); row.className='slider-row';
+    row.innerHTML=`<div class="slider-label"><span class="slider-name">${p.name}</span><span class="slider-val" id="sv_${p.key}">${p.def}</span></div><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.def}" id="sl_${p.key}">`;
+    area.appendChild(row);
+    row.querySelector('input').addEventListener('input',function(){
+      curParams[p.key]=parseFloat(this.value);
+      document.getElementById('sv_'+p.key).textContent=this.value;
+      updateChart(d);
+    });
+  });
+}
+
+function updateStats(d){
+  const row=document.getElementById('statRow'); row.innerHTML='';
+  try{d.stats(curParams).forEach(s=>{const c=document.createElement('div');c.className='stat-chip';c.innerHTML=`${s.label}：<b>${s.v}</b>`;row.appendChild(c);});}catch(e){}
+}
+
+function updateChart(d){
+  updateStats(d);
+  let [lo,hi]=d.range(curParams);
+  if(!isFinite(lo)||!isFinite(hi)){lo=-5;hi=15;}
+  const steps=200, labels=[], vals=[];
+  if(d.disc){
+    for(let k=Math.floor(lo);k<=Math.ceil(hi);k++){labels.push(String(k));const v=d.fn(k,curParams);vals.push(isFinite(v)?+v.toFixed(6):0);}
+  } else {
+    for(let i=0;i<=steps;i++){const x=lo+(hi-lo)*i/steps;labels.push(x.toFixed(3));const v=d.fn(x,curParams);vals.push(isFinite(v)?+v.toFixed(7):0);}
+  }
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  if(mainChart){mainChart.destroy();mainChart=null;}
+  const commonOpts={responsive:true,maintainAspectRatio:false,animation:{duration:180},plugins:{legend:{display:false}}};
+  if(d.disc){
+    mainChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'P(k)',data:vals,backgroundColor:d.c+'99',borderColor:d.c,borderWidth:1.5,barPercentage:0.6}]},options:{...commonOpts,scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}});
+  } else {
+    mainChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'f(x)',data:vals,borderColor:d.c,borderWidth:2.5,pointRadius:0,fill:true,backgroundColor:d.c+'25',tension:0.3}]},options:{...commonOpts,scales:{x:{ticks:{maxTicksLimit:9,font:{size:11}},grid:{display:false}},y:{beginAtZero:true,ticks:{font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}}); 
+  }
+}
+
+function selectDist(id){
+  if(curId)document.getElementById('dc_'+curId)?.classList.remove('sel');
+  curId=id;
+  document.getElementById('dc_'+id)?.classList.add('sel');
+  const d=DS.find(x=>x.id===id);
+  document.getElementById('pName').textContent=d.name;
+  document.getElementById('pFormula').textContent=d.formula;
+  document.getElementById('pNote').textContent=d.note;
+  buildSliders(d); updateChart(d);
+}
+
+selectDist('norm');
+</script>
