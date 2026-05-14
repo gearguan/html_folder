@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gaussian Kernel Visualizer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;display:flex;flex-direction:column;align-items:center;padding:32px 16px;min-height:100vh}
+h1{font-size:20px;font-weight:600;letter-spacing:.3px;margin-bottom:4px}
+.sub{font-size:12px;color:#64748b;font-family:monospace;margin-bottom:28px}
+.wrap{width:100%;max-width:860px}
+canvas{display:block;width:100%;border-radius:10px;background:#161b27;border:1px solid #1e2a3a}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:20px}
+.ctrl{background:#161b27;border:1px solid #1e2a3a;border-radius:10px;padding:14px 16px}
+.ctrl-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.ctrl-name{font-family:monospace;font-size:13px;color:#93c5fd}
+.ctrl-val{font-family:monospace;font-size:13px;font-weight:700;color:#f0abfc}
+.ctrl-desc{font-size:11px;color:#475569;margin-bottom:8px}
+input[type=range]{width:100%;-webkit-appearance:none;height:3px;border-radius:2px;background:#1e2a3a;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#93c5fd;border:2px solid #0f1117;cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.4)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#93c5fd;border:2px solid #0f1117;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.stat{background:#161b27;border:1px solid #1e2a3a;border-radius:8px;padding:10px 12px}
+.stat-l{font-size:10px;color:#475569;margin-bottom:3px;letter-spacing:.4px;text-transform:uppercase}
+.stat-v{font-family:monospace;font-size:14px;font-weight:700;color:#86efac}
+.formula{background:#161b27;border:1px solid #1e2a3a;border-left:3px solid #f0abfc;border-radius:8px;padding:12px 16px;margin-top:14px;font-family:monospace;font-size:13px;color:#cbd5e1;line-height:2}
+.formula b{color:#93c5fd}
+.formula em{color:#f0abfc;font-style:normal}
+@media(max-width:540px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Gaussian Kernel Visualizer</h1>
+  <p class="sub">f(x) = A · exp( −(x − μ)² / (2σ²) )</p>
+
+  <canvas id="cv" height="400"></canvas>
+
+  <div class="controls">
+    <div class="ctrl">
+      <div class="ctrl-top"><span class="ctrl-name">A &nbsp;(amplitude)</span><span class="ctrl-val" id="v-A">1.000</span></div>
+      <div class="ctrl-desc">Peak height of the curve</div>
+      <input type="range" id="s-A" min="0.05" max="5" step="0.05" value="1">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-top"><span class="ctrl-name">μ &nbsp;(mean)</span><span class="ctrl-val" id="v-mu">0.000</span></div>
+      <div class="ctrl-desc">Center / location of the peak</div>
+      <input type="range" id="s-mu" min="-4" max="4" step="0.05" value="0">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-top"><span class="ctrl-name">σ &nbsp;(std dev)</span><span class="ctrl-val" id="v-sig">1.000</span></div>
+      <div class="ctrl-desc">Width of the bell curve</div>
+      <input type="range" id="s-sig" min="0.1" max="4" step="0.05" value="1">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-top"><span class="ctrl-name">x range</span><span class="ctrl-val" id="v-xr">±6</span></div>
+      <div class="ctrl-desc">Horizontal view window</div>
+      <input type="range" id="s-xr" min="2" max="12" step="0.5" value="6">
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-l">Peak f(μ)</div><div class="stat-v" id="st-peak">—</div></div>
+    <div class="stat"><div class="stat-l">FWHM</div><div class="stat-v" id="st-fwhm">—</div></div>
+    <div class="stat"><div class="stat-l">f(μ±σ)</div><div class="stat-v" id="st-sigma">—</div></div>
+    <div class="stat"><div class="stat-l">f(μ±2σ)</div><div class="stat-v" id="st-2sigma">—</div></div>
+  </div>
+
+  <div class="formula">
+    f(x) = <b>A</b> · exp( −(x − <em>μ</em>)² / (2<em>σ</em>²) )<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <b id="f-A">1.000</b> · exp( −(x − <em id="f-mu">0.000</em>)² / (2 × <em id="f-sig">1.000</em>²) )
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function g(x, A, mu, sig) {
+  return A * Math.exp(-((x - mu) ** 2) / (2 * sig * sig));
+}
+
+function draw() {
+  const A   = parseFloat(document.getElementById('s-A').value);
+  const mu  = parseFloat(document.getElementById('s-mu').value);
+  const sig = parseFloat(document.getElementById('s-sig').value);
+  const xr  = parseFloat(document.getElementById('s-xr').value);
+
+  // update labels
+  document.getElementById('v-A').textContent   = A.toFixed(3);
+  document.getElementById('v-mu').textContent  = mu.toFixed(3);
+  document.getElementById('v-sig').textContent = sig.toFixed(3);
+  document.getElementById('v-xr').textContent  = '±' + xr.toFixed(1);
+  document.getElementById('f-A').textContent   = A.toFixed(3);
+  document.getElementById('f-mu').textContent  = mu.toFixed(3);
+  document.getElementById('f-sig').textContent = sig.toFixed(3);
+
+  // stats
+  const fwhm = 2 * Math.sqrt(2 * Math.LN2) * sig;
+  document.getElementById('st-peak').textContent   = A.toFixed(4);
+  document.getElementById('st-fwhm').textContent   = fwhm.toFixed(4);
+  document.getElementById('st-sigma').textContent  = g(mu + sig, A, mu, sig).toFixed(4);
+  document.getElementById('st-2sigma').textContent = g(mu + 2 * sig, A, mu, sig).toFixed(4);
+
+  // canvas resolution
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth;
+  const H = 400;
+  cv.width  = W * dpr;
+  cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const pad = { l: 58, r: 24, t: 28, b: 48 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const xMin = -xr, xMax = xr;
+  const yMax = A * 1.15, yMin = -yMax * 0.06;
+
+  function tx(x) { return pad.l + (x - xMin) / (xMax - xMin) * pw; }
+  function ty(y) { return pad.t + ph - (y - yMin) / (yMax - yMin) * ph; }
+
+  // background
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = '#1e2a3a';
+  ctx.lineWidth = 1;
+  const xTicks = 9, yTicks = 6;
+  for (let i = 0; i <= xTicks; i++) {
+    const x = xMin + (xMax - xMin) * i / xTicks;
+    ctx.beginPath(); ctx.moveTo(tx(x), pad.t); ctx.lineTo(tx(x), pad.t + ph); ctx.stroke();
+  }
+  for (let i = 0; i <= yTicks; i++) {
+    const y = yMin + (yMax - yMin) * i / yTicks;
+    ctx.beginPath(); ctx.moveTo(pad.l, ty(y)); ctx.lineTo(pad.l + pw, ty(y)); ctx.stroke();
+  }
+
+  // axes
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, ty(0)); ctx.lineTo(pad.l + pw, ty(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tx(0), pad.t); ctx.lineTo(tx(0), pad.t + ph); ctx.stroke();
+
+  // ±σ markers
+  const drawVLine = (xv, color, dash) => {
+    if (xv < xMin || xv > xMax) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(tx(xv), pad.t); ctx.lineTo(tx(xv), pad.t + ph); ctx.stroke();
+    ctx.restore();
+  };
+  drawVLine(mu - sig,  '#f59e0b', [4,3]);
+  drawVLine(mu + sig,  '#f59e0b', [4,3]);
+  drawVLine(mu - 2*sig,'#ef4444', [3,4]);
+  drawVLine(mu + 2*sig,'#ef4444', [3,4]);
+  drawVLine(mu,        '#86efac', [2,2]);
+
+  // FWHM horizontal line
+  const fwhmY = A / 2;
+  const fwhmX1 = mu - fwhm / 2;
+  const fwhmX2 = mu + fwhm / 2;
+  if (fwhmX1 >= xMin && fwhmX2 <= xMax) {
+    ctx.save();
+    ctx.strokeStyle = '#818cf8';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(tx(fwhmX1), ty(fwhmY)); ctx.lineTo(tx(fwhmX2), ty(fwhmY)); ctx.stroke();
+    ctx.fillStyle = '#818cf8';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('FWHM', tx((fwhmX1+fwhmX2)/2), ty(fwhmY) - 6);
+    ctx.restore();
+  }
+
+  // filled area under curve
+  const steps = 600;
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + (xMax - xMin) * i / steps;
+    const y = g(x, A, mu, sig);
+    i === 0 ? ctx.moveTo(tx(x), ty(y)) : ctx.lineTo(tx(x), ty(y));
+  }
+  ctx.lineTo(tx(xMax), ty(0));
+  ctx.lineTo(tx(xMin), ty(0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(147,197,253,0.08)';
+  ctx.fill();
+  ctx.restore();
+
+  // main curve
+  ctx.save();
+  ctx.strokeStyle = '#93c5fd';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = '#93c5fd';
+  ctx.shadowBlur = 6;
+  ctx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const x = xMin + (xMax - xMin) * i / steps;
+    const y = g(x, A, mu, sig);
+    i === 0 ? ctx.moveTo(tx(x), ty(y)) : ctx.lineTo(tx(x), ty(y));
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // peak dot
+  ctx.save();
+  ctx.fillStyle = '#f0abfc';
+  ctx.shadowColor = '#f0abfc';
+  ctx.shadowBlur = 8;
+  ctx.beginPath();
+  ctx.arc(tx(mu), ty(A), 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // axis tick labels
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= xTicks; i++) {
+    const x = xMin + (xMax - xMin) * i / xTicks;
+    if (Math.abs(x) < 0.001) continue;
+    ctx.fillText(x.toFixed(1), tx(x), pad.t + ph + 18);
+  }
+  ctx.fillText('x', pad.l + pw + 12, pad.t + ph + 5);
+
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= yTicks; i++) {
+    const y = yMin + (yMax - yMin) * i / yTicks;
+    if (y < 0) continue;
+    ctx.fillText(y.toFixed(2), pad.l - 8, ty(y) + 4);
+  }
+
+  // legend
+  const leg = [
+    { color:'#86efac', label:'μ' },
+    { color:'#f59e0b', label:'μ ± σ' },
+    { color:'#ef4444', label:'μ ± 2σ' },
+    { color:'#818cf8', label:'FWHM' },
+  ];
+  let lx = pad.l + 10;
+  leg.forEach(({ color, label }) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(lx, pad.t + 8, 14, 3);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, lx + 18, pad.t + 13);
+    lx += ctx.measureText(label).width + 40;
+  });
+}
+
+['s-A','s-mu','s-sig','s-xr'].forEach(id =>
+  document.getElementById(id).addEventListener('input', draw)
+);
+window.addEventListener('resize', draw);
+draw();
+</script>
+</body>
+</html>
