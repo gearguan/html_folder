@@ -1,0 +1,356 @@
+algorithm:
+  clip_param: 0.2
+  desired_kl: 0.008
+  entropy_coef: 0.01
+  gamma: 0.99
+  lam: 0.95
+  learning_rate: 0.0001
+  max_grad_norm: 1.0
+  num_learning_epochs: 3
+  num_mini_batches: 8
+  schedule: adaptive
+  use_clipped_value_loss: true
+  value_loss_coef: 1.0
+init_member_classes: {}
+policy:
+  activation: elu
+  actor_hidden_dims:
+  - 128
+  - 64
+  - 32
+  critic_hidden_dims:
+  - 128
+  - 64
+  - 32
+  init_noise_std: 0.3
+runner:
+  algorithm_class_name: PPO
+  checkpoint: -1
+  experiment_name: motor_gyro_balance
+  load_run: -1
+  max_iterations: 5000
+  num_steps_per_env: 192
+  policy_class_name: ActorCritic
+  resume: false
+  resume_path: null
+  run_name: 0602-3
+  save_interval: 100
+runner_class_name: OnPolicyRunner
+seed: 5
+asset:
+  angular_damping: 0.0
+  armature: 0.0
+  collapse_fixed_joints: true
+  default_dof_drive_mode: 3
+  density: 0.001
+  disable_gravity: false
+  file: '{LEGGED_GYM_ROOT_DIR}/resources/motorcycle/PT_64_TienKung/motorcycle_riding_fixed_tienkung.urdf'
+  fix_base_link: false
+  flip_visual_attachments: false
+  foot_name: None
+  linear_damping: 0.0
+  max_angular_velocity: 1000.0
+  max_linear_velocity: 1000.0
+  name: MotorcycleGyroBalance
+  penalize_contacts_on: []
+  replace_cylinder_with_capsule: false
+  self_collisions: 1
+  terminate_after_contacts_on: []
+  thickness: 0.01
+command_state:
+  accel_max: 0.8
+  accel_min: 0.3
+  decel_max: 1.5
+  decel_min: 0.5
+  dwell_max: 5.0
+  jerk_max: 5.0
+  resample_T: 3.0
+  stationary_mode: true
+  steer_acc_deg: 5.0
+  steer_hi_deg: 10.0
+  steer_lo_deg: 0.0
+  steer_rate_deg: 10.0
+  v0: 4.166666666666667
+commands:
+  curriculum: false
+  heading_command: true
+  max_curriculum: 1.0
+  num_commands: 2
+  ranges:
+    steering_angle:
+    - -0.7853981633974483
+    - 0.7853981633974483
+    wheel_vel:
+    - 0.0
+    - 4.166666666666667
+  resampling_time: 1.0
+control:
+  action_scale: 180.0
+  damping: {}
+  decimation: 10
+  max_precession_vel_degs: 360.0
+  precession_damping: 500.0
+  precession_effort_limit: 800.0
+  precession_front_sign: -1.0
+  precession_vel_resolution: 1.0
+  precession_velocity_limit: 6.98
+  rotor_angular_velocity: 544.5427266222308
+  stiffness: {}
+  wheel_radius: 0.285
+domain_rand:
+  actuator_K_range: null
+  actuator_delay_range:
+  - 0.06
+  - 0.11
+  actuator_mode: ideal
+  actuator_wn_range: null
+  added_mass_range:
+  - -5.0
+  - 5.0
+  brake_duration_range:
+  - 0.5
+  - 2.0
+  brake_interval_range:
+  - 3.0
+  - 8.0
+  com_y_range:
+  - -0.01
+  - 0.01
+  com_z_range:
+  - -0.01
+  - 0.01
+  eps_disturbance: false
+  eps_push_interval_s: 5
+  friction_range:
+  - 0.4
+  - 1.2
+  inertia_scale_range:
+  - 0.8333333333333334
+  - 1.2
+  max_eps_offset_rad: 0.15
+  max_push_roll_vel: 1.0
+  max_waist_roll_rad: 0.1
+  push_balance_threshold: 0.17453292519943295
+  push_interval: 800.0
+  push_interval_s: 8
+  push_robots: false
+  random_brake: false
+  randomize_actuator: true
+  randomize_base_com: true
+  randomize_base_inertia: true
+  randomize_base_mass: false
+  randomize_friction: false
+  waist_roll_disturbance: false
+  waist_roll_resample_interval_s: 3.0
+env:
+  c_frame_stack: 12
+  env_spacing: 5.0
+  episode_length_s: 16
+  frame_stack: 3
+  num_actions: 1
+  num_envs: 4096
+  num_observations: 27
+  num_privileged_obs: 108
+  num_single_obs: 9
+  send_timeouts: true
+  single_num_privileged_obs: 9
+  use_ref_actions: false
+init_state:
+  ang_vel:
+  - 0.0
+  - 0.0
+  - 0.0
+  default_joint_angles:
+    drive_joint: 0.0
+    steering_joint: 0.0
+    front_joint: 0.0
+    front_precession_joint: 0.0
+    front_rotor_joint: 0.0
+    rear_precession_joint: 0.0
+    rear_rotor_joint: 0.0
+    body_yaw_joint: 0.0
+  lin_vel:
+  - 0.0
+  - 0.0
+  - 0.0
+  max_init_precession_rad: 0.17453292519943295
+  max_init_roll_rad: 0.05235987755982988
+  max_init_roll_vel: 0.03490658503988659
+  pos:
+  - 0.0
+  - 0.0
+  - 0.27
+  precession_limit: 0.9599310886
+  rider_joint_damping: 500.0
+  rider_joint_names:
+  - waist_roll_joint
+  - body_yaw_joint
+  rider_joint_stiffness: 100.0
+  roll_vel_gaussian_k: 2.0
+  rot:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+noise:
+  add_noise: false
+  noise_level: 0.0
+  noise_scales: {}
+normalization:
+  clip_actions: 1.0
+  clip_observations: 100.0
+  obs_scales:
+    eps_angle: 0.02
+    eps_angular_vel: 0.02
+    precession_pos: 0.02
+    precession_vel: 0.005
+    rear_wheel_acc: 0.02
+    rear_wheel_rpm: 0.004
+    roll_angle: 0.02
+    roll_rate: 0.05
+reward_function_style: typeA
+rewards:
+  function_style: typeA
+  max_contact_force: 100.0
+  only_positive_rewards: false
+  scales_typeA:
+    action_rate: -0.05
+    alive: 2.0
+    balance: 5.0
+    precession_centering: -0.2
+    precession_limit: -2.0
+    precession_vel_limit: -2.0
+    stability: -0.2
+  scales_typeB:
+    action_rate: -0.05
+    alive: 2.0
+    balance: 2.0
+    prec_pos: -0.5
+    prec_vel: -0.1
+  scales_typeC:
+    action_rate: -1.0e-06
+    prec_pos: -0.01
+    prec_vel: -1.0e-05
+    time_alive: 0.1
+  tracking_sigma: 0.25
+safety:
+  pos_limit: 1.0
+  torque_limit: 0.85
+  vel_limit: 1.0
+sensor_noise:
+  enable: true
+  gyro_x_bias: 0.0
+  gyro_x_innov: 0.03654
+  gyro_x_phi: 0.853
+  gyro_x_sigma: 0.06997
+  roll_bias: 0.0
+  roll_innov: 0.1308
+  roll_phi: 0.9
+  roll_sigma: 0.3
+sim:
+  dt: 0.001
+  gravity:
+  - 0.0
+  - 0.0
+  - -9.81
+  physx:
+    bounce_threshold_velocity: 0.5
+    contact_collection: 2
+    contact_offset: 0.01
+    default_buffer_size_multiplier: 5
+    max_depenetration_velocity: 5.0
+    max_gpu_contact_pairs: 33554432
+    num_position_iterations: 8
+    num_threads: 10
+    num_velocity_iterations: 1
+    rest_offset: 0.0
+    solver_type: 1
+  substeps: 1
+  up_axis: 1
+termination:
+  max_roll: 0.20943951023931953
+  min_height: 0.15
+  precession_terminate_ratio: 0.95
+terrain:
+  border_size: 5.0
+  bump_max_height: 0.03
+  bump_min_ratio: 0.1
+  bump_wavelength: 0.5
+  curriculum: false
+  dynamic_friction: 0.6
+  flat_bumpy_difficulty: 1.0
+  flat_bumpy_flat_ratio: 0.5
+  flat_bumpy_max_height: 0.03
+  flat_bumpy_min_ratio: 0.1
+  flat_bumpy_wavelength: 0.5
+  horizontal_scale: 0.05
+  max_init_terrain_level: 0
+  measure_heights: false
+  measured_points_x:
+  - -0.8
+  - -0.7
+  - -0.6
+  - -0.5
+  - -0.4
+  - -0.3
+  - -0.2
+  - -0.1
+  - 0.0
+  - 0.1
+  - 0.2
+  - 0.3
+  - 0.4
+  - 0.5
+  - 0.6
+  - 0.7
+  - 0.8
+  measured_points_y:
+  - -0.5
+  - -0.4
+  - -0.3
+  - -0.2
+  - -0.1
+  - 0.0
+  - 0.1
+  - 0.2
+  - 0.3
+  - 0.4
+  - 0.5
+  mesh_type: plane
+  mixed_bumpy_difficulty: 1.0
+  mixed_flat_mid: 10.0
+  mixed_max_angle_deg: 30.0
+  mixed_min_angle_deg: 5.0
+  mixed_random_seed: 43
+  num_cols: 16
+  num_rows: 17
+  restitution: 0.0
+  selected: false
+  slope_flat_after: 10.0
+  slope_flat_before: 10.0
+  slope_len: 10.0
+  slope_max_angle_deg: 30.0
+  slope_min_angle_deg: 5.0
+  slope_plateau_len: 10.0
+  slope_random_seed: 42
+  slope_strip_gap: 1.0
+  slope_strip_margin: 0.5
+  slope_strip_width: 3.0
+  slope_treshold: 0.75
+  static_friction: 0.6
+  terrain_kwargs: null
+  terrain_length: 8.0
+  terrain_proportions:
+  - 1.0
+  terrain_width: 8.0
+  vertical_scale: 0.002
+viewer:
+  lookat:
+  - 0.0
+  - 0
+  - 0.0
+  pos:
+  - 10
+  - 0
+  - 15
+  ref_env: 0
