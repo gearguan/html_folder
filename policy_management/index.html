@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>策略管理榜 · 总排行榜</title>
+<style>
+  :root {
+    --bg: #eef1f8;
+    --panel: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e6e8ef;
+    --head: #f4f6fb;
+    --accent: #2f54eb;
+    --green: #16a34a;
+    --green-bg: #e7f6ec;
+    --amber: #d97706;
+    --red: #dc2626;
+    --row-hover: #f7f9ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: radial-gradient(1200px 600px at 50% -200px, #dfe6fb 0%, var(--bg) 60%);
+    color: var(--ink);
+    padding: 32px 16px 64px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin: 8px 0 6px;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 0 4px 14px;
+    line-height: 1.6;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(31, 36, 48, 0.06);
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--head);
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 14px 10px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th .arrow { color: var(--muted); font-size: 11px; margin-left: 2px; }
+  tbody td {
+    text-align: center;
+    font-size: 14px;
+    padding: 13px 10px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  tbody tr { position: relative; transition: background .15s; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody tr:last-child td { border-bottom: none; }
+  .rank {
+    font-weight: 700;
+    width: 64px;
+    position: relative;
+  }
+  .rank::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 8px; bottom: 8px;
+    width: 5px; border-radius: 3px;
+    background: var(--accent);
+  }
+  .rank.top1::before { background: #f59e0b; }
+  .rank.top2::before { background: #9ca3af; }
+  .rank.top3::before { background: #cd7f32; }
+  .name { font-weight: 600; letter-spacing: .5px; }
+  .date-sub { display:block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .score { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .score.good { color: var(--green); }
+  .score.mid  { color: var(--amber); }
+  .score.low  { color: var(--red); }
+  .dl {
+    display: inline-flex; align-items: center; gap: 5px;
+    text-decoration: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--ink);
+    background: #fff;
+    transition: all .15s;
+  }
+  .dl:hover { border-color: var(--accent); color: var(--accent); background: #f5f7ff; }
+  .dl.cfg:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+  .foot { text-align:center; color: var(--muted); font-size: 12px; margin-top: 18px; }
+  @media (max-width: 760px) {
+    body { padding: 16px 6px 40px; }
+    h1 { font-size: 20px; }
+    thead th, tbody td { padding: 10px 6px; font-size: 12px; }
+    .dl { padding: 4px 8px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>策略管理榜 · 总排行榜</h1>
+  <div class="note">
+    各策略按综合表现排序（综合分 = 扶正 + 平衡 + 抗扰 的平均值，可点击表头按任意列排序）。
+    点击右侧按钮下载对应的策略文件 (.pt) 与配置文件 (.yaml)。
+  </div>
+
+  <div class="card">
+    <table id="board">
+      <thead>
+        <tr>
+          <th data-key="rank">排名</th>
+          <th data-key="date">日期 <span class="arrow"></span></th>
+          <th data-key="upright">扶正能力 <span class="arrow"></span></th>
+          <th data-key="balance">平衡能力 <span class="arrow"></span></th>
+          <th data-key="disturb">抗扰能力 <span class="arrow"></span></th>
+          <th>策略文件</th>
+          <th>配置文件</th>
+        </tr>
+      </thead>
+      <tbody><!-- rows injected by JS --></tbody>
+    </table>
+  </div>
+
+  <div class="foot">数据由 strategies 数组维护 · 适用于 GitHub Pages 静态托管</div>
+</div>
+
+<script>
+/* ============================================================
+   要新增策略，只需在下面数组里加一行对象即可。
+   date    : 编号，如 "0604-5"（MMDD-序号）
+   upright : 扶正能力分数
+   balance : 平衡能力分数
+   disturb : 抗扰能力分数
+   policy  : 策略文件相对路径（.pt）
+   config  : 配置文件相对路径（.yaml）
+   ============================================================ */
+const strategies = [
+  {
+    date: "0604-5",
+    upright: 81.5,
+    balance: 92.7,
+    disturb: 32.8,
+    policy: "policies/0604-5-policy.pt",
+    config: "policies/0604-5-config.yaml"
+  },
+  // 复制上面这一块来添加更多策略 ↓
+];
+
+// ---- 工具函数 ----
+function avg(s) { return (s.upright + s.balance + s.disturb) / 3; }
+
+function scoreClass(v) {
+  if (v >= 70) return "good";
+  if (v >= 45) return "mid";
+  return "low";
+}
+
+let sortKey = "score";
+let sortDesc = true;
+
+function sortData() {
+  const arr = [...strategies];
+  arr.sort((a, b) => {
+    let va, vb;
+    if (sortKey === "score") { va = avg(a); vb = avg(b); }
+    else if (sortKey === "date") { va = a.date; vb = b.date; }
+    else { va = a[sortKey]; vb = b[sortKey]; }
+    if (va < vb) return sortDesc ? 1 : -1;
+    if (va > vb) return sortDesc ? -1 : 1;
+    return 0;
+  });
+  return arr;
+}
+
+function render() {
+  const data = sortData();
+  const tbody = document.querySelector("#board tbody");
+  tbody.innerHTML = data.map((s, i) => {
+    const rank = i + 1;
+    const topCls = rank <= 3 ? ` top${rank}` : "";
+    return `
+      <tr>
+        <td class="rank${topCls}">${rank}</td>
+        <td>
+          <span class="name">${s.date}</span>
+        </td>
+        <td class="score ${scoreClass(s.upright)}">${s.upright.toFixed(1)}</td>
+        <td class="score ${scoreClass(s.balance)}">${s.balance.toFixed(1)}</td>
+        <td class="score ${scoreClass(s.disturb)}">${s.disturb.toFixed(1)}</td>
+        <td><a class="dl" href="${s.policy}" download>⬇ .pt</a></td>
+        <td><a class="dl cfg" href="${s.config}" download>⬇ .yaml</a></td>
+      </tr>`;
+  }).join("");
+
+  // 更新表头箭头
+  document.querySelectorAll("thead th .arrow").forEach(el => el.textContent = "");
+  const th = document.querySelector(`thead th[data-key="${sortKey}"] .arrow`);
+  if (th) th.textContent = sortDesc ? "▼" : "▲";
+}
+
+// 表头点击排序
+document.querySelectorAll("thead th[data-key]").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.key;
+    if (key === "rank") { sortKey = "score"; sortDesc = true; }
+    else if (sortKey === key) { sortDesc = !sortDesc; }
+    else { sortKey = key; sortDesc = true; }
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
