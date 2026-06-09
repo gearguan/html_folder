@@ -105,6 +105,7 @@
   }
   .dl:hover { border-color: var(--accent); color: var(--accent); background: #f5f7ff; }
   .dl.cfg:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+  .note-cell { text-align: left; color: var(--muted); white-space: normal; min-width: 120px; }
   .foot { text-align:center; color: var(--muted); font-size: 12px; margin-top: 18px; }
   @media (max-width: 760px) {
     body { padding: 16px 6px 40px; }
@@ -131,6 +132,7 @@
           <th data-key="upright">扶正能力 <span class="arrow"></span></th>
           <th data-key="balance">平衡能力 <span class="arrow"></span></th>
           <th data-key="disturb">抗扰能力 <span class="arrow"></span></th>
+          <th>说明</th>
           <th>策略文件</th>
           <th>配置文件</th>
         </tr>
@@ -158,6 +160,7 @@ const strategies = [
     upright: 81.5,
     balance: 92.7,
     disturb: 32.8,
+    note: "稳定性强",
     policy: "policies/0604-5-policy.pt",
     config: "policies/0604-5-config.yaml"
   },
@@ -167,6 +170,7 @@ const strategies = [
     upright: 71.5,
     balance: 82.7,
     disturb: 52.8,
+    note: "抗eps大角度能力强",
     policy: "policies/0601-4-policy.pt",
     config: "policies/0601-4-config.yaml"
   },
@@ -175,6 +179,7 @@ const strategies = [
     upright: 70.5,
     balance: 81.7,
     disturb: 54.8,
+    note: "水桶策略，表现平庸，但稳定",
     policy: "policies/0601-5-policy.pt",
     config: "policies/0601-5-config.yaml"
   },
@@ -183,6 +188,7 @@ const strategies = [
     upright: 70.5,
     balance: 72.7,
     disturb: 62.8,
+    note: "适合小体重的人",
     policy: "policies/0602-2-policy.pt",
     config: "policies/0602-2-config.yaml"
   },
@@ -191,6 +197,7 @@ const strategies = [
     upright: 80.5,
     balance: 75.7,
     disturb: 32.8,
+    note: "适合大体重的人",
     policy: "policies/0602-3-policy.pt",
     config: "policies/0602-3-config.yaml"
   },
@@ -237,6 +244,7 @@ function render() {
         <td class="score ${scoreClass(s.upright)}">${s.upright.toFixed(1)}</td>
         <td class="score ${scoreClass(s.balance)}">${s.balance.toFixed(1)}</td>
         <td class="score ${scoreClass(s.disturb)}">${s.disturb.toFixed(1)}</td>
+        <td class="note-cell">${s.note || ""}</td>
         <td><a class="dl" href="${s.policy}" download>⬇ .pt</a></td>
         <td><a class="dl cfg" href="${s.config}" download>⬇ .yaml</a></td>
       </tr>`;
