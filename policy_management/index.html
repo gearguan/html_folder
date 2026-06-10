@@ -106,6 +106,8 @@
   .dl:hover { border-color: var(--accent); color: var(--accent); background: #f5f7ff; }
   .dl.cfg:hover { border-color: var(--green); color: var(--green); background: var(--green-bg); }
   .note-cell { text-align: left; color: var(--muted); white-space: normal; min-width: 120px; }
+  .score a { color: inherit; text-decoration: none; border-bottom: 1px dashed currentColor; }
+  .score a:hover { opacity: .75; }
   .foot { text-align:center; color: var(--muted); font-size: 12px; margin-top: 18px; }
   @media (max-width: 760px) {
     body { padding: 16px 6px 40px; }
@@ -147,19 +149,22 @@
 <script>
 /* ============================================================
    要新增策略，只需在下面数组里加一行对象即可。
-   date    : 编号，如 "0604-5"（MMDD-序号）
-   upright : 扶正能力分数
-   balance : 平衡能力分数
-   disturb : 抗扰能力分数
-   policy  : 策略文件相对路径（.pt）
-   config  : 配置文件相对路径（.yaml）
+   date        : 编号，如 "0604-5"（MMDD-序号）
+   upright     : 扶正能力分数
+   balance     : 平衡能力分数
+   disturb     : 抗扰能力分数
+   uprightUrl  : 点击扶正能力数字跳转的网址（留空则不跳转）
+   balanceUrl  : 点击平衡能力数字跳转的网址（留空则不跳转）
+   disturbUrl  : 点击抗扰能力数字跳转的网址（留空则不跳转）
+   policy      : 策略文件相对路径（.pt）
+   config      : 配置文件相对路径（.yaml）
    ============================================================ */
 const strategies = [
   {
     date: "0604-5",
-    upright: 81.5,
-    balance: 92.7,
-    disturb: 32.8,
+    upright: 81.5,    uprightUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    balance: 92.7,    balanceUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    disturb: 32.8,    disturbUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
     note: "稳定性强",
     policy: "policies/0604-5-policy.pt",
     config: "policies/0604-5-config.yaml"
@@ -167,36 +172,36 @@ const strategies = [
   // 复制上面这一块来添加更多策略 ↓
   {
     date: "0601-4",
-    upright: 71.5,
-    balance: 82.7,
-    disturb: 52.8,
+    upright: 71.5,    uprightUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    balance: 82.7,    balanceUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    disturb: 52.8,    disturbUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
     note: "抗eps大角度能力强",
     policy: "policies/0601-4-policy.pt",
     config: "policies/0601-4-config.yaml"
   },
   {
     date: "0601-5",
-    upright: 70.5,
-    balance: 81.7,
-    disturb: 54.8,
+    upright: 70.5,    uprightUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    balance: 81.7,    balanceUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    disturb: 54.8,    disturbUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
     note: "水桶策略，表现平庸，但稳定",
     policy: "policies/0601-5-policy.pt",
     config: "policies/0601-5-config.yaml"
   },
   {
     date: "0602-2",
-    upright: 70.5,
-    balance: 72.7,
-    disturb: 62.8,
+    upright: 70.5,    uprightUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    balance: 72.7,    balanceUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    disturb: 62.8,    disturbUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
     note: "适合小体重的人",
     policy: "policies/0602-2-policy.pt",
     config: "policies/0602-2-config.yaml"
   },
   {
     date: "0602-3",
-    upright: 80.5,
-    balance: 75.7,
-    disturb: 32.8,
+    upright: 80.5,    uprightUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    balance: 75.7,    balanceUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
+    disturb: 32.8,    disturbUrl: "https://gearguan.github.io/html_folder/data_process/cell_probability.html",
     note: "适合大体重的人",
     policy: "policies/0602-3-policy.pt",
     config: "policies/0602-3-config.yaml"
@@ -241,9 +246,9 @@ function render() {
         <td>
           <span class="name">${s.date}</span>
         </td>
-        <td class="score ${scoreClass(s.upright)}">${s.upright.toFixed(1)}</td>
-        <td class="score ${scoreClass(s.balance)}">${s.balance.toFixed(1)}</td>
-        <td class="score ${scoreClass(s.disturb)}">${s.disturb.toFixed(1)}</td>
+        <td class="score ${scoreClass(s.upright)}">${s.uprightUrl ? `<a href="${s.uprightUrl}" target="_blank">${s.upright.toFixed(1)}</a>` : s.upright.toFixed(1)}</td>
+        <td class="score ${scoreClass(s.balance)}">${s.balanceUrl ? `<a href="${s.balanceUrl}" target="_blank">${s.balance.toFixed(1)}</a>` : s.balance.toFixed(1)}</td>
+        <td class="score ${scoreClass(s.disturb)}">${s.disturbUrl ? `<a href="${s.disturbUrl}" target="_blank">${s.disturb.toFixed(1)}</a>` : s.disturb.toFixed(1)}</td>
         <td class="note-cell">${s.note || ""}</td>
         <td><a class="dl" href="${s.policy}" download>⬇ .pt</a></td>
         <td><a class="dl cfg" href="${s.config}" download>⬇ .yaml</a></td>
