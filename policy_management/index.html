@@ -51,7 +51,8 @@
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   col.c-rank    { width: 5%; }
   col.c-date    { width: 9%; }
-  col.c-score   { width: 12%; }
+  col.c-score   { width: 10%; }
+  col.c-total   { width: 10%; }
   col.c-note    { width: 22%; }
   col.c-video   { width: 8%; }
   col.c-file    { width: 10%; }
@@ -192,6 +193,7 @@
         <col class="c-score">
         <col class="c-score">
         <col class="c-score">
+        <col class="c-total">
         <col class="c-note">
         <col class="c-video">
         <col class="c-file">
@@ -204,6 +206,7 @@
           <th data-key="upright">扶正能力 <span class="arrow"></span></th>
           <th data-key="balance">平衡能力 <span class="arrow"></span></th>
           <th data-key="disturb">抗扰能力 <span class="arrow"></span></th>
+          <th data-key="total">综合能力 <span class="arrow"></span></th>
           <th>说明</th>
           <th>视频</th>
           <th>策略文件</th>
@@ -475,6 +478,7 @@ function sortData() {
   arr.sort((a, b) => {
     let va, vb;
     if (sortKey === "score") { va = avg(a); vb = avg(b); }
+    else if (sortKey === "total") { va = a.upright + a.balance + a.disturb; vb = b.upright + b.balance + b.disturb; }
     else if (sortKey === "date") { va = a.date; vb = b.date; }
     else { va = a[sortKey]; vb = b[sortKey]; }
     if (va < vb) return sortDesc ? 1 : -1;
@@ -499,6 +503,7 @@ function render() {
         <td class="score ${scoreClass(s.upright)}">${s.uprightUrl ? `<a href="${s.uprightUrl}" target="_blank">${s.upright.toFixed(6)}</a>` : s.upright.toFixed(6)}</td>
         <td class="score ${scoreClass(s.balance)}">${s.balanceUrl ? `<a href="${s.balanceUrl}" target="_blank">${s.balance.toFixed(6)}</a>` : s.balance.toFixed(6)}</td>
         <td class="score ${scoreClass(s.disturb)}">${s.disturbUrl ? `<a href="${s.disturbUrl}" target="_blank">${s.disturb.toFixed(6)}</a>` : s.disturb.toFixed(6)}</td>
+        <td class="score ${scoreClass(s.upright + s.balance + s.disturb)}">${(s.upright + s.balance + s.disturb).toFixed(6)}</td>
         <td class="note-cell">${s.note || ""}</td>
         <td>${s.video ? `<button class="btn-play" onclick="openVideo('${s.video}','${s.date}')">▶ 播放</button>` : ""}</td>
         <td><a class="dl" href="${s.policy}" download>⬇ .pt</a></td>
