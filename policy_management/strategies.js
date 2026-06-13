@@ -125,7 +125,7 @@ const strategies = [
   {
     date: "0605-1",
     upright: 0.439418,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0605-1-policy_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.654575,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0605-1-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0605-1-policy.pt",
@@ -135,7 +135,7 @@ const strategies = [
   {
     date: "0605-3",
     upright: 0.380037,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0605-3-policy_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.574323,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0605-3-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0605-3-policy.pt",
@@ -145,7 +145,7 @@ const strategies = [
   {
     date: "0605-4",
     upright: 0.441843,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0605-4-policy_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.642479,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0605-4-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0605-4-policy.pt",
@@ -155,7 +155,7 @@ const strategies = [
   {
     date: "0608-4",
     upright: 0.385242,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0608-4-policy_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.660077,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0608-4-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0608-4-policy.pt",
@@ -165,7 +165,7 @@ const strategies = [
   {
     date: "0608-5",
     upright: 0.401155,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0608-5-policy_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.582593,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0608-5-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0608-5-policy.pt",
@@ -175,7 +175,7 @@ const strategies = [
   {
     date: "0608-6",
     upright: 0.349977,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0608-6-policy_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.706095,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0608-6-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0608-6-policy.pt",
