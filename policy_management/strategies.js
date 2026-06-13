@@ -98,7 +98,7 @@ const strategies = [
     upright: 0.542627,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0603-13-policy_stable_domain_cells.html",
     balance: 0.638717,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0603-13-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
-    note: "不确定",
+    note: "原地平衡稳定，大eps转角或身体侧倾容易退出",
     policy: "policies/0603-13-policy.pt",
     config: "policies/0603-13-config.yaml",
     video: "videos/0603-13.mp4"
@@ -187,7 +187,7 @@ const strategies = [
     upright: 0.392323,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0609-1-policy_stable_domain_cells.html",
     balance: 0.744596,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0609-1-policy_balance_stable_domain_cells.html",
     disturb: 0.0,
-    note: "不确定",
+    note: "大eps转角不退出，身体侧倾不退出，原地平衡抖动强",
     policy: "policies/0609-1-policy.pt",
     config: "policies/0609-1-config.yaml",
     video: "videos/0609-1.mp4"
