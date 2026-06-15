@@ -64,7 +64,8 @@ const strategies = [
     disturb: 0.0,
     note: "不确定",
     policy: "policies/0603-1-policy.pt",
-    config: "policies/0603-1-config.yaml"
+    config: "policies/0603-1-config.yaml",
+    video: "videos/0603-1.mp4"
   },
   {
     date: "0603-8",

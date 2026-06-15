@@ -100,19 +100,9 @@
   .date-sub { display:block; color: var(--muted); font-size: 11px; margin-top: 2px; }
   .score { font-variant-numeric: tabular-nums; font-weight: 600; }
   .score.top5-mark {
+    color: var(--red);
     font-weight: 800;
-    position: relative;
   }
-  .score.top5-mark::after {
-    content: "★";
-    font-size: 9px;
-    vertical-align: super;
-    margin-left: 2px;
-    opacity: 0.75;
-  }
-  .score.good { color: var(--green); }
-  .score.mid  { color: var(--amber); }
-  .score.low  { color: var(--red); }
   .dl {
     display: inline-flex; align-items: center; gap: 5px;
     text-decoration: none;
@@ -252,11 +242,6 @@
 // ---- 工具函数 ----
 function avg(s) { return (s.upright + s.balance + s.disturb) / 3; }
 
-function scoreClass(v) {
-  if (v >= 70) return "good";
-  if (v >= 45) return "mid";
-  return "low";
-}
 
 let sortKey = "score";
 let sortDesc = true;
@@ -304,10 +289,10 @@ function render() {
         <td>
           <span class="name">${s.date}</span>
         </td>
-        <td class="score ${scoreClass(s.upright)}${mkU}">${s.uprightUrl ? `<a href="${s.uprightUrl}" target="_blank">${s.upright.toFixed(6)}</a>` : s.upright.toFixed(6)}</td>
-        <td class="score ${scoreClass(s.balance)}${mkB}">${s.balanceUrl ? `<a href="${s.balanceUrl}" target="_blank">${s.balance.toFixed(6)}</a>` : s.balance.toFixed(6)}</td>
-        <td class="score ${scoreClass(s.disturb)}">${s.disturbUrl ? `<a href="${s.disturbUrl}" target="_blank">${s.disturb.toFixed(6)}</a>` : s.disturb.toFixed(6)}</td>
-        <td class="score ${scoreClass(total)}${mkT}">${total.toFixed(6)}</td>
+        <td class="score${mkU}">${s.uprightUrl ? `<a href="${s.uprightUrl}" target="_blank">${s.upright.toFixed(6)}</a>` : s.upright.toFixed(6)}</td>
+        <td class="score${mkB}">${s.balanceUrl ? `<a href="${s.balanceUrl}" target="_blank">${s.balance.toFixed(6)}</a>` : s.balance.toFixed(6)}</td>
+        <td class="score">${s.disturbUrl ? `<a href="${s.disturbUrl}" target="_blank">${s.disturb.toFixed(6)}</a>` : s.disturb.toFixed(6)}</td>
+        <td class="score${mkT}">${total.toFixed(6)}</td>
         <td class="note-cell">${s.note || ""}</td>
         <td>${s.video ? `<button class="btn-play" onclick="openVideo('${s.video}','${s.date}')">▶ 播放</button>` : ""}</td>
         <td><a class="dl" href="${s.policy}" download>⬇ .pt</a></td>
