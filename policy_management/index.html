@@ -288,6 +288,7 @@ function render() {
   const data = sortData();
   const thU = top5Threshold("upright");
   const thB = top5Threshold("balance");
+  const thD = top5Threshold("disturb");
   const thT = top5Threshold("total");
 
   const tbody = document.querySelector("#board tbody");
@@ -297,6 +298,7 @@ function render() {
     const total  = s.upright + s.balance + s.disturb;
     const mkU = s.upright >= thU ? " top5-mark" : "";
     const mkB = s.balance >= thB ? " top5-mark" : "";
+    const mkD = s.disturb >= thD ? " top5-mark" : "";
     const mkT = total    >= thT ? " top5-mark" : "";
     return `
       <tr>
@@ -306,7 +308,7 @@ function render() {
         </td>
         <td class="score ${scoreClass(s.upright)}${mkU}">${s.uprightUrl ? `<a href="${s.uprightUrl}" target="_blank">${s.upright.toFixed(6)}</a>` : s.upright.toFixed(6)}</td>
         <td class="score ${scoreClass(s.balance)}${mkB}">${s.balanceUrl ? `<a href="${s.balanceUrl}" target="_blank">${s.balance.toFixed(6)}</a>` : s.balance.toFixed(6)}</td>
-        <td class="score ${scoreClass(s.disturb)}">${s.disturbUrl ? `<a href="${s.disturbUrl}" target="_blank">${s.disturb.toFixed(6)}</a>` : s.disturb.toFixed(6)}</td>
+        <td class="score ${scoreClass(s.disturb)}${mkD}">${s.disturbUrl ? `<a href="${s.disturbUrl}" target="_blank">${s.disturb.toFixed(6)}</a>` : s.disturb.toFixed(6)}</td>
         <td class="score ${scoreClass(total)}${mkT}">${total.toFixed(6)}</td>
         <td class="note-cell">${s.note || ""}</td>
         <td>${s.video ? `<button class="btn-play" onclick="openVideo('${s.video}','${s.date}')">▶ 播放</button>` : ""}</td>
