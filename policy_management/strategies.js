@@ -46,7 +46,8 @@ const strategies = [
     disturb: 0.602101,    disturbUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0602-10-policy_disturb_eps_stable_domain_cells.html",
     note: "不确定",
     policy: "policies/0602-10-policy.pt",
-    config: "policies/0602-10-config.yaml"
+    config: "policies/0602-10-config.yaml",
+    video: "videos/0602-10.mp4"
   },
   {
     date: "0602-11",
@@ -83,7 +84,8 @@ const strategies = [
     disturb: 0.592679,    disturbUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0603-9-policy_disturb_eps_stable_domain_cells.html",
     note: "不确定",
     policy: "policies/0603-9-policy.pt",
-    config: "policies/0603-9-config.yaml"
+    config: "policies/0603-9-config.yaml",
+    video: "videos/0603-9.mp4"
   },
   {
     date: "0603-11",
@@ -92,7 +94,8 @@ const strategies = [
     disturb: 0.622963,    disturbUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0603-11-policy_disturb_eps_stable_domain_cells.html",
     note: "不确定",
     policy: "policies/0603-11-policy.pt",
-    config: "policies/0603-11-config.yaml"
+    config: "policies/0603-11-config.yaml",
+    video: "videos/0603-11.mp4"
   },
   {
     date: "0603-13",
