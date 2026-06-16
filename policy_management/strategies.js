@@ -199,7 +199,7 @@ const strategies = [
   {
     date: "0609-3",
     upright: 0.429705,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0609-3_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.795563,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0609-3_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "eps大角度不退出，身体侧倾不退出，原地平衡抖动强",
     policy: "policies/0609-3.pt",
@@ -209,7 +209,7 @@ const strategies = [
   {
     date: "0609-4",
     upright: 0.394055,    uprightUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0609-4_stable_domain_cells.html",
-    balance: 0.0,
+    balance: 0.750244,    balanceUrl: "https://gearguan.github.io/html_folder/policy_management/policy_description/0609-4_balance_stable_domain_cells.html",
     disturb: 0.0,
     note: "eps大角度不退出，身体侧倾不退出，原地平衡抖动强",
     policy: "policies/0609-4.pt",
